@@ -1,0 +1,38 @@
+name: Build Basira APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Build APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Name APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk Basira-Offline-v1.0.0.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Basira-Offline-APK
+          path: Basira-Offline-v1.0.0.apk
+          if-no-files-found: error
+          retention-days: 30
